@@ -6,7 +6,7 @@ const uiScore = document.getElementById('score-display');
 const uiHigh = document.getElementById('high-score');
 const uiMsg = document.getElementById('msg-text');
 const uiSub = document.getElementById('sub-msg');
-const muteBtn = document.getElementById('mute-btn'); // NEW
+const muteBtn = document.getElementById('mute-btn');
 
 let width, height, centerX, centerY;
 
@@ -44,7 +44,9 @@ if (bestRecord === null) {
 let gameState = 'start'; 
 let stillFrames = 0;
 let shakeIntensity = 0;
-let isMuted = false; // NEW variable
+let isMuted = false; 
+let comboCount = 0;
+let comboTimer = 0;
 
 // --- AUDIO SYSTEM ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -55,7 +57,6 @@ function initAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-// NEW: Mute Toggle Function
 muteBtn.addEventListener('mousedown', (e) => {
     e.stopPropagation(); // Stop click from triggering a jump
     isMuted = !isMuted;
@@ -71,7 +72,7 @@ muteBtn.addEventListener('mousedown', (e) => {
 });
 
 function playSound(type) {
-    if (isMuted) return; // NEW: Check mute state first
+    if (isMuted) return;
     if (!audioCtx) return;
     
     const osc = audioCtx.createOscillator();
@@ -120,6 +121,29 @@ function playSound(type) {
         gain.gain.linearRampToValueAtTime(0, now + 0.4);
         osc.start(now);
         osc.stop(now + 0.4);
+    } else if (type === 'jackpot') {
+        for (let i = 0; i < 20; i++) {
+            // randomize timing slightly to sound like natural spill
+            const t = now + (i * 0.06) + (Math.random() * 0.02); 
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            // sine waves
+            osc.type = 'sine';
+            
+            const freq = 2200 + (Math.random() * 800); 
+            osc.frequency.setValueAtTime(freq, t);
+            
+            // sharp attack, longer decay (0.3s) lets it "ring" out
+            gain.gain.setValueAtTime(0.03, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            
+            osc.start(t);
+            osc.stop(t + 0.4);
+        }
     }
 }
 
@@ -177,6 +201,16 @@ class Ball {
     update() {
         if (gameState !== 'playing') return;
 
+        // combo timer logic: reset combo if too much time passes (30 frames = 0.5s)
+        if (comboTimer > 0) {
+            comboTimer--;
+        } else {
+            if (comboCount >= 3) {
+                 uiScore.style.color = 'rgba(255, 255, 255, 0.9)';
+            }
+            comboCount = 0;
+        }
+
         // Physics
         this.vy += config.gravity;
         this.vx *= config.friction;
@@ -217,7 +251,14 @@ class Ball {
                 
                 if (isAngleInGap(angle, ring.rotation, ring.gapSize)) {
                     createExplosion(this.x, this.y, ring.color);
-                    playSound('break');
+                    comboCount++;
+                    comboTimer = 30;
+                    if (comboCount >= 3) {
+                        playSound('jackpot');
+                        uiScore.style.color = '#ffd700'; 
+                    } else {
+                        playSound('break');
+                    }
                     rings.splice(i, 1);
                     this.color = ring.color;
                     stillFrames = 0; 
@@ -249,20 +290,34 @@ class Ball {
     }
 
     draw() {
+        // draw trail
         for (let i = 0; i < this.history.length; i++) {
             const pos = this.history[i];
             const alpha = i / this.history.length;
             ctx.beginPath();
-            ctx.fillStyle = this.color;
+            // trail also turns gold
+            ctx.fillStyle = (comboCount >= 3) ? '#ffd700' : this.color;
             ctx.globalAlpha = alpha * 0.4;
             ctx.arc(centerX + pos.x, centerY + pos.y, this.radius * alpha, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
+
+        // draws ball
         ctx.beginPath();
-        ctx.fillStyle = this.color;
+        // check for gold mode
+        if (comboCount >= 3) {
+            ctx.fillStyle = '#ffd700';
+            ctx.shadowColor = '#ffd700'; // add glow
+            ctx.shadowBlur = 20;
+        } else {
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 0;
+        }
+        
         ctx.arc(centerX + this.x, centerY + this.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0; 
     }
 }
 
@@ -283,14 +338,25 @@ class Ring {
         this.rotation = normalizeAngle(this.rotation);
     }
     draw() {
-        ctx.beginPath();
-        ctx.strokeStyle = this.color;
+       ctx.beginPath();
+        
+        // check for gold mode
+        if (comboCount >= 3) {
+            ctx.strokeStyle = '#ffd700';
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 10;
+        } else {
+            ctx.strokeStyle = this.color;
+            ctx.shadowBlur = 0;
+        }
+
         ctx.lineWidth = config.ringThickness;
         ctx.lineCap = 'butt'; 
         const start = this.rotation + this.gapSize / 2;
         const end = this.rotation - this.gapSize / 2;
         ctx.arc(centerX, centerY, this.radius, start, end);
         ctx.stroke();
+        ctx.shadowBlur = 0;
     }
 }
 
@@ -346,14 +412,13 @@ function gameWin() {
     uiSub.innerText = `${clickCount} CLICKS - Click to Play Again`;
 }
 
-// Helper function to handle saving safely
+
 function updateBestScore(val) {
     bestRecord = val;
     uiHigh.innerText = `BEST: ${bestRecord}`;
     try {
         localStorage.setItem('ballEscapeMinClicks', bestRecord);
     } catch (e) {
-        // This catches errors if browser blocks saving (e.g., incognito mode)
         console.error("Could not save score:", e);
     }
 }
