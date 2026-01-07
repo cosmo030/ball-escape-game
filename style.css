@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #080808;
+    font-family: 'Courier New', Courier, monospace;
+    user-select: none;
+}
+
+canvas {
+    display: block;
+}
+
+/* --- HUD (Top Left) --- */
+#hud {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    text-align: left;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#score-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+}
+
+#score-display {
+    font-size: 60px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    line-height: 1;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+#high-score {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 8px;
+}
+
+/* --- MUTE BUTTON (Top Right) --- */
+#mute-btn {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20; /* Higher than HUD so it's clickable */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#mute-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* --- Center Messages --- */
+#center-msg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+    width: 100%;
+}
+
+#msg-text {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 4px 15px black;
+    font-weight: bold;
+}
+
+#sub-msg {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 10px;
+    letter-spacing: 1px;
+}
