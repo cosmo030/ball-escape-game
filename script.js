@@ -97,8 +97,11 @@ function initAudio() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-muteBtn.addEventListener('mousedown', (e) => {
-    e.stopPropagation(); // Stop click from triggering a jump
+// Function to toggle mute safely on both touch and click
+function toggleMute(e) {
+    e.preventDefault(); 
+    e.stopPropagation(); // Stop click from jumping the ball
+    
     isMuted = !isMuted;
     
     if (isMuted) {
@@ -107,13 +110,17 @@ muteBtn.addEventListener('mousedown', (e) => {
     } else {
         muteBtn.innerText = "🔊 ON";
         muteBtn.style.color = "rgba(255, 255, 255, 0.6)";
-        initAudio(); // Initialize audio context if they unmute
+        initAudio(); 
     }
-});
+}
 
-// --- HARD MODE TOGGLE ---
-hardBtn.addEventListener('mousedown', (e) => {
-    e.stopPropagation(); // prevents the click from starting the game
+muteBtn.addEventListener('mousedown', toggleMute);
+muteBtn.addEventListener('touchstart', toggleMute, {passive: false});
+
+// Function to toggle hard mode safely
+function toggleHardMode(e) {
+    e.preventDefault();
+    e.stopPropagation(); 
     
     if (currentDifficulty === 'normal') {
         currentDifficulty = 'hard';
@@ -128,14 +135,16 @@ hardBtn.addEventListener('mousedown', (e) => {
     }
     
     init();
-    
     gameState = 'start';
     uiMsg.innerText = "BALL ESCAPE"; 
-    uiSub.innerText = "Click to Start";
+    uiSub.innerText = "Tap to Start"; // Changed text for mobile context
     
     loadHighScore(); 
-    playSound('lose'); // audio feedback for the switch
-});
+    playSound('lose'); 
+}
+
+hardBtn.addEventListener('mousedown', toggleHardMode);
+hardBtn.addEventListener('touchstart', toggleHardMode, {passive: false});
 
 function playSound(type) {
     if (isMuted) return;
@@ -617,7 +626,10 @@ window.addEventListener('resize', () => {
     centerY = height / 2;
 });
 
-window.addEventListener('mousedown', () => {
+// --- INPUT HANDLING ---
+function handleInput(e) {
+    if (e.type === 'touchstart') e.preventDefault(); 
+    
     initAudio(); 
     
     if (gameState !== 'playing') {
@@ -631,7 +643,10 @@ window.addEventListener('mousedown', () => {
         uiScore.innerText = clickCount;
         playSound('jump');
     }
-});
+}
+
+window.addEventListener('mousedown', handleInput);
+window.addEventListener('touchstart', handleInput, {passive: false});
 
 init(); 
 gameState = 'start'; 
