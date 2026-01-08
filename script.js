@@ -7,29 +7,69 @@ const uiHigh = document.getElementById('high-score');
 const uiMsg = document.getElementById('msg-text');
 const uiSub = document.getElementById('sub-msg');
 const muteBtn = document.getElementById('mute-btn');
+const uiProb = document.getElementById('prob-display');
+const uiDepth = document.getElementById('depth-display');
 
 let width, height, centerX, centerY;
 
-const config = {
-    ballRadius: 7,
-    ringCount: 15,
-    ringSpacing: 22,
-    ringThickness: 12,
-    baseGapArc: 45,
-    gapGrowthPerRing: 12,
-    gravity: 0.22,
-    bounceFactor: 0.9,
-    friction: 0.999,
-    jumpForce: 7.5,
-    baseSpeed: 0.01
+// --- CONFIGURATION PRESETS ---
+const difficulties = {
+    normal: {
+        ballRadius: 7,
+        ringCount: 15,
+        ringSpacing: 22,
+        ringThickness: 12,
+        baseGapArc: 45,
+        gapGrowthPerRing: 12,
+        gravity: 0.22,
+        bounceFactor: 0.9,
+        friction: 0.999,
+        jumpForce: 7.5,
+        baseSpeed: 0.01,
+        storageKey: 'ballEscapeMinClicks' // Save Normal scores here
+    },
+    hard: {
+        ballRadius: 7,
+        ringCount: 15,
+        ringSpacing: 22,
+        ringThickness: 12,
+        baseGapArc: 35,
+        gapGrowthPerRing: 6,
+        gravity: 0.22,
+        bounceFactor: 0.9,
+        friction: 0.999,
+        jumpForce: 7.5,
+        baseSpeed: 0.01,
+        storageKey: 'ballEscapeHardMode' // Save Hard scores here
+    }
 };
+
+let currentDifficulty = 'normal';
+let config = Object.assign({}, difficulties.normal);
+
+const hardBtn = document.getElementById('hard-mode-btn');
 
 let ball;
 let rings = [];
 let particles = [];
-
 let clickCount = 0;
-let bestRecord = localStorage.getItem('ballEscapeMinClicks'); 
+let bestRecord = null; 
+
+function loadHighScore() {
+    let stored = localStorage.getItem(config.storageKey);
+    if (stored === '0') stored = null; // ignore 0 glitch
+    
+    bestRecord = stored;
+    
+    if (bestRecord === null) {
+        uiHigh.innerText = "BEST: -";
+    } else {
+        uiHigh.innerText = `BEST: ${bestRecord}`;
+    }
+}
+
+// load initial score
+loadHighScore();
 
 if (bestRecord === '0') {
     bestRecord = null;
@@ -69,6 +109,32 @@ muteBtn.addEventListener('mousedown', (e) => {
         muteBtn.style.color = "rgba(255, 255, 255, 0.6)";
         initAudio(); // Initialize audio context if they unmute
     }
+});
+
+// --- HARD MODE TOGGLE ---
+hardBtn.addEventListener('mousedown', (e) => {
+    e.stopPropagation(); // prevents the click from starting the game
+    
+    if (currentDifficulty === 'normal') {
+        currentDifficulty = 'hard';
+        Object.assign(config, difficulties.hard);
+        hardBtn.classList.add('active');
+        hardBtn.innerText = "HARD";
+    } else {
+        currentDifficulty = 'normal';
+        Object.assign(config, difficulties.normal);
+        hardBtn.classList.remove('active');
+        hardBtn.innerText = "HARD";
+    }
+    
+    init();
+    
+    gameState = 'start';
+    uiMsg.innerText = "BALL ESCAPE"; 
+    uiSub.innerText = "Click to Start";
+    
+    loadHighScore(); 
+    playSound('lose'); // audio feedback for the switch
 });
 
 function playSound(type) {
@@ -383,10 +449,14 @@ function gameWin() {
 
     // --- FUNNY ZERO CLICK CHECK ---
     if (clickCount === 0) {
-        uiMsg.innerText = "CONGRATS, THIS ISN'T SUPPOSE TO HAPPEN BUT NICE!";
+        uiMsg.innerText = "CONGRATS, THIS ISN'T SUPPOSED TO HAPPEN BUT NICE!";
         uiMsg.style.color = "#00ffff"; 
         uiSub.innerText = "0 Clicks?! You found the tunnel! (Click to Replay)";
         playSound('win');
+
+        bestRecord = null;
+        localStorage.removeItem('ballEscapeMinClicks');
+        uiHigh.innerText = "BEST: -";
         
         return;
     }
@@ -417,7 +487,7 @@ function updateBestScore(val) {
     bestRecord = val;
     uiHigh.innerText = `BEST: ${bestRecord}`;
     try {
-        localStorage.setItem('ballEscapeMinClicks', bestRecord);
+        localStorage.setItem(config.storageKey, bestRecord);
     } catch (e) {
         console.error("Could not save score:", e);
     }
@@ -459,7 +529,65 @@ function loop() {
     ctx.fillStyle = 'rgba(8, 8, 8, 0.4)';
     ctx.fillRect(0, 0, width, height);
 
-    if (gameState === 'playing') {
+if (gameState === 'playing') {
+        // --- LIVE ALIGNMENT TRACKER ---
+        if (rings.length > 0) {
+            const currentRing = rings[0];
+            
+            // 1. Calculate Angles
+            // Ball Angle: direction from center (0,0) to ball (x,y)
+            const ballAngle = normalizeAngle(Math.atan2(ball.y, ball.x));
+            // Gap Angle: current rotation of the ring
+            const gapAngle = normalizeAngle(currentRing.rotation);
+            
+            // 2. Calculate Distance (How far is the ball from the gap?)
+            let diff = Math.abs(ballAngle - gapAngle);
+            if (diff > Math.PI) diff = (2 * Math.PI) - diff; // Handle wrap-around (e.g. 359° vs 1°)
+
+            const halfGap = currentRing.gapSize / 2;
+            
+            // 3. Calculate Probability
+            let probability = 0;
+            
+            if (diff <= halfGap) {
+                // We are INSIDE the gap!
+                probability = 100;
+            } else {
+                // We are OUTSIDE. Linearly decrease from 100% (edge) to 0% (far side)
+                const distFromEdge = diff - halfGap;
+                const maxDist = Math.PI - halfGap; // Max possible distance
+                
+                // Formula: (1 - (current / max)) * 100
+                probability = Math.max(0, (1 - (distFromEdge / maxDist)) * 100);
+            }
+            
+            // 4. Update UI
+            uiProb.innerText = `${probability.toFixed(1)}%`;
+            
+            // Color Logic: Green = Fire now!, Red = Wait
+            if (probability >= 99) uiProb.style.color = '#44ff44';
+            else if (probability > 50) uiProb.style.color = '#ffaa44';
+            else uiProb.style.color = '#ff4444';
+
+            const currentLayer = config.ringCount - rings.length;
+            uiDepth.innerText = `${currentLayer} / ${config.ringCount}`;
+            
+            if (rings.length <= 3) {
+                uiDepth.style.color = '#ffd700';
+            } else {
+                uiDepth.style.color = 'rgba(255, 255, 255, 0.8)';
+            }
+            
+        } else {
+            // No rings left
+            uiProb.innerText = "100%";
+            uiProb.style.color = "#44ff44";
+
+            uiDepth.innerText = `${config.ringCount} / ${config.ringCount}`;
+            uiDepth.style.color = "#44ff44";
+        }
+        // -------------------------------------------
+
         rings.forEach(ring => ring.update());
         ball.update();
     }

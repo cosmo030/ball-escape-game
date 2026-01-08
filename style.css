@@ -15,31 +15,63 @@ canvas {
     position: absolute;
     top: 30px;
     left: 30px;
+    padding: 20px 25px;
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     text-align: left;
     pointer-events: none;
     z-index: 10;
+    min-width: 160px;
 }
 
 #score-label {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 5px;
-    letter-spacing: 1px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 2px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 #score-display {
-    font-size: 60px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: 54px;
+    font-weight: 800;
+    color: #fff;
     margin: 0;
     line-height: 1;
-    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    font-family: sans-serif; /* Cleaner look */
 }
 
 #high-score {
-    font-size: 16px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 5px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+/* Shared Styles for Stat Rows */
+#prob-container, #depth-container {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: monospace;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px; /* Slight spacing between rows */
+}
+
+#prob-label, #depth-label {
     color: rgba(255, 255, 255, 0.4);
-    margin-top: 8px;
+    font-size: 11px;
+    margin-right: 10px;
+    font-weight: 700;
 }
 
 /* --- MUTE BUTTON (Top Right) --- */
@@ -47,20 +79,37 @@ canvas {
     position: absolute;
     top: 30px;
     right: 30px;
+    
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
     color: rgba(255, 255, 255, 0.6);
-    font-size: 18px;
-    font-weight: bold;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    
     cursor: pointer;
-    z-index: 20; /* Higher than HUD so it's clickable */
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
+    z-index: 20;
+    padding: 15px 20px;
+    transition: all 0.2s ease;
+    user-select: none;
 }
 
 #mute-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px); /* Subtle lift effect */
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+#mute-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* --- Center Messages --- */
@@ -89,4 +138,45 @@ canvas {
     color: rgba(255, 255, 255, 0.6);
     margin-top: 10px;
     letter-spacing: 1px;
+}
+
+/* --- HARD MODE BUTTON --- */
+#hard-mode-btn {
+    position: absolute;
+    top: 85px; /* 30px (mute) + 55px spacing */
+    right: 30px;
+    
+    /* Glassmorphism (Matches HUD & Mute) */
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* Text Styling */
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    
+    cursor: pointer;
+    z-index: 20;
+    padding: 15px 20px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+#hard-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ff4444;
+    border-color: rgba(255, 68, 68, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(255, 0, 0, 0.2);
+}
+
+#hard-mode-btn.active {
+    background: rgba(100, 0, 0, 0.6);
+    color: #ffaaaa;
+    border-color: #ff4444;
 }
