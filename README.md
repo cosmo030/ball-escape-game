@@ -36,13 +36,12 @@ The goal is simple: **Escape the rings with the fewest clicks possible.**
 You can play the game directly in your browser without installing anything.
 
 ### Option 1: Live Demo
-[**Play the Game Here**](https://your-username.github.io/ball-escape-game/)
-*(Replace this link with your actual GitHub Pages URL)*
+[**Play the Game Here**](https://cosmo030.github.io/ball-escape-game/)
 
 ### Option 2: Run Locally
 1.  Clone this repository:
     ```bash
-    git clone [https://github.com/your-username/ball-escape-game.git](https://github.com/your-username/ball-escape-game.git)
+    git clone [https://github.com/cosmo030/ball-escape-game.git](https://github.com/cosmo030/ball-escape-game.git)
     ```
 2.  Navigate to the folder.
 3.  Open `index.html` in any modern web browser.
